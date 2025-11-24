@@ -26,6 +26,7 @@ const server = http.createServer(async (req, res) => {
     await db.insert(visitorLog).values({
       message: "Hello from Drizzle!",
       name: "Visitor",
+      email: "visitor@example.com",
       userAgent: req.headers["user-agent"] || "Unknown",
     })
 

@@ -13,10 +13,8 @@ RUN npm install
 # 3. Copier le code (Le .dockerignore va filtrer les fichiers inutiles)
 COPY . .
 
-# 4. La solution ultime pour le build
-# On définit une variable de construction (ARG)
-# Prisma va la lire automatiquement sans qu'on ait besoin de la mettre dans la commande
-RUN echo "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/mydb" > .env
+# 4. Définir DATABASE_URL pour Prisma generate (pas besoin de vraie DB pour générer le client)
+ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/mydb
 
 # 5. Générer le client
 RUN npx prisma generate

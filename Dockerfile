@@ -2,21 +2,24 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# --- FIX CRITIQUE POUR PRISMA SUR ALPINE ---
-# Prisma a besoin d'OpenSSL pour fonctionner
+# 1. Installer OpenSSL (Indispensable pour Prisma sur Alpine)
 RUN apk add --no-cache openssl
 
 COPY package*.json ./
 
-# Installe les dépendances
+# 2. Installer les dépendances
 RUN npm install
 
-# Copie tout le reste
+# 3. Copier le code (Le .dockerignore va filtrer les fichiers inutiles)
 COPY . .
 
-# Génère le client Prisma avec l'URL bidon
-# (OpenSSL étant installé, ça ne devrait plus planter)
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/mydb" npx prisma generate
+# 4. La solution ultime pour le build
+# On définit une variable de construction (ARG)
+# Prisma va la lire automatiquement sans qu'on ait besoin de la mettre dans la commande
+ARG DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+
+# 5. Générer le client
+RUN npx prisma generate
 
 EXPOSE 3000
 

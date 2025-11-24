@@ -97,32 +97,24 @@ services:
     volumes:
       - ./backups:/backups
 
-  # --- DRIZZLE STUDIO ---
-  studio:
-    # On réutilise l'image de ton app (elle contient schema.js et config)
-    image: ${IMAGE_NAME}
+  # --- DB EXPLORER (ADMINER) ---
+  adminer:
+    image: adminer
     restart: always
-    # On écrase la commande de démarrage par défaut pour lancer le Studio
-    # Le "-y" permet de l'installer si jamais il manque dans l'image de prod
-    command: npx drizzle-kit studio --port 4983 --host 0.0.0.0
     networks:
-      - web_network # Pour Traefik
-      - default # Pour parler à la DB
+      - web_network
+      - default
     environment:
-      # Il a besoin de savoir où est la DB pour lire les données
-      - DATABASE_URL=postgresql://app_user:${DB_PASSWORD}@db:5432/mydb
+      - ADMINER_DESIGN=hydra
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web_network"
-
-      # URL : studio.proof-of-project.avqn.ch
+      # On garde la même URL
       - "traefik.http.routers.${SERVICE_NAME}-studio.rule=Host(`studio.${DOMAIN_NAME}`)"
       - "traefik.http.routers.${SERVICE_NAME}-studio.entrypoints=websecure"
       - "traefik.http.routers.${SERVICE_NAME}-studio.tls.certresolver=myresolver"
-      - "traefik.http.services.${SERVICE_NAME}-studio.loadbalancer.server.port=4983"
-
-      # 🔒 SÉCURITÉ CRITIQUE : Drizzle Studio n'a AUCUN mot de passe intégré.
-      # On DOIT utiliser le Basic Auth de Traefik, sinon n'importe qui supprime ta DB.
+      - "traefik.http.services.${SERVICE_NAME}-studio.loadbalancer.server.port=8080"
+      # AUTHENTIFICATION OBLIGATOIRE
       - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$mTp02pz/$$JgD44iCfTvV5g6ORuzrJJ."
       - "traefik.http.routers.${SERVICE_NAME}-studio.middlewares=auth"
 

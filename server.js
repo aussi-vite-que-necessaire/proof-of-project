@@ -45,7 +45,7 @@ const server = http.createServer(async (req, res) => {
     const dbTime = result.rows[0].now
 
     res.end(
-      `Hello from the VPS! \nEnvironment: ${process.env.NODE_ENV} \nDB Time: ${dbTime}`
+      `Hello from the VPS depuis une nouvelle PR! \nEnvironment: ${process.env.NODE_ENV} \nDB Time: ${dbTime}`
     )
   } catch (e) {
     res.end(

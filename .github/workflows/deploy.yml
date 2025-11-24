@@ -79,8 +79,20 @@ jobs:
 
             # 7. Attendre que la DB soit prête
             echo "Attente de la base de données..."
+            for i in {1..30}; do
+              docker compose exec -T db pg_isready -U app_user -d mydb && break
+              echo "Attente de la DB... ($i/30)"
+              sleep 1
+            done
+
+            # 8. Attendre que le conteneur app soit prêt
+            echo "Attente du conteneur app..."
             sleep 5
 
-            # 8. Appliquer les migrations
+            # 9. Appliquer les migrations
             echo "Application des migrations..."
-            docker compose exec -T app npm run db:migrate || echo "Migrations déjà appliquées ou erreur (non bloquant)"
+            docker compose exec -T app npm run db:migrate || {
+              echo "⚠️ Erreur lors de l'application des migrations, voir les logs ci-dessous:"
+              docker compose logs app | tail -20
+              echo "⚠️ Les migrations peuvent être appliquées manuellement avec: make migrate"
+            }

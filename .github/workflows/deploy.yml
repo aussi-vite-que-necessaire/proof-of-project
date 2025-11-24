@@ -1,0 +1,68 @@
+name: Deploy App
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  # NOM DE DOMAINE A CONFIGURER ICI
+  # Si ton domaine est "monagence.com", mets-le ici.
+  BASE_DOMAIN: "avqn.ch"
+  PROJECT_NAME: "proof-of-project"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # 1. Login au registre sur le VPS pour pouvoir télécharger l'image privée
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # 2. Créer le dossier du projet
+            mkdir -p ~/apps/${{ env.PROJECT_NAME }}
+            cd ~/apps/${{ env.PROJECT_NAME }}
+
+            # 3. Récupérer le docker-compose frais (on l'écrit dynamiquement)
+            # On utilise 'curl' pour télécharger le fichier depuis le repo brut
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -o docker-compose.yml \
+                 -L https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+
+            # 4. Pull la dernière image
+            export IMAGE_NAME=ghcr.io/${{ github.repository }}:latest
+            docker compose pull
+
+            # 5. Lancer ! 
+            # On injecte les variables pour Traefik
+            export SERVICE_NAME=${{ env.PROJECT_NAME }}
+            export DOMAIN_NAME=${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
+            export ENV_TYPE=production
+
+            docker compose up -d --remove-orphans

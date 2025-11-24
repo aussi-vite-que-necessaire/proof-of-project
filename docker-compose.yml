@@ -1,0 +1,21 @@
+services:
+  app:
+    # L'image sera construite par GitHub Actions
+    image: ${IMAGE_NAME}
+    restart: always
+    networks:
+      - web_network
+    environment:
+      - NODE_ENV=${ENV_TYPE} # "production" ou "preview"
+    labels:
+      - "traefik.enable=true"
+      # ROUTER : On utilise le nom de domaine injecté dynamiquement
+      - "traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${SERVICE_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${SERVICE_NAME}.tls.certresolver=myresolver"
+      # SERVICE : On pointe sur le port interne du container
+      - "traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=3000"
+
+networks:
+  web_network:
+    external: true

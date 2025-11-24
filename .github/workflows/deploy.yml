@@ -76,3 +76,11 @@ jobs:
             # Plus besoin de 'export' car Docker lit le .env tout seul !
             docker compose pull
             docker compose up -d --remove-orphans
+
+            # 7. Attendre que la DB soit prête
+            echo "Attente de la base de données..."
+            sleep 5
+
+            # 8. Appliquer les migrations
+            echo "Application des migrations..."
+            docker compose exec -T app npm run db:migrate || echo "Migrations déjà appliquées ou erreur (non bloquant)"

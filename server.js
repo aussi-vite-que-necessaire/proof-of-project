@@ -1,7 +1,10 @@
 const http = require("http")
 const { Client } = require("pg")
+const { createClient } = require("redis")
 
-// Configuration
+// ==========================================
+// 1. CONFIGURATION POSTGRES (Retry Logic)
+// ==========================================
 const dbConfig = {
   user: process.env.POSTGRES_USER || "postgres",
   password: process.env.POSTGRES_PASSWORD || "example",
@@ -10,47 +13,78 @@ const dbConfig = {
   port: 5432,
 }
 
-let client
+let pgClient
 
-// Fonction de connexion résiliente (Retry Pattern)
-const connectWithRetry = () => {
-  console.log("⏳ Tentative de connexion à PostgreSQL...")
-
-  // On crée une nouvelle instance à chaque tentative
-  client = new Client(dbConfig)
-
-  client
+const connectPgWithRetry = () => {
+  console.log("🐘 Tentative connexion PostgreSQL...")
+  pgClient = new Client(dbConfig)
+  pgClient
     .connect()
-    .then(() => console.log("✅ Connecté à PostgreSQL avec succès !"))
+    .then(() => console.log("✅ Connecté à PostgreSQL !"))
     .catch((err) => {
-      console.error(
-        "❌ Échec connexion DB. Nouvelle tentative dans 5 secondes..."
-      )
-      console.error("Erreur:", err.message)
-      // On attend 5 secondes avant de réessayer
-      setTimeout(connectWithRetry, 5000)
+      console.error("❌ Echec PG. Retry dans 5s...", err.message)
+      setTimeout(connectPgWithRetry, 5000)
     })
 }
+connectPgWithRetry()
 
-// Lancer la connexion
-connectWithRetry()
+// ==========================================
+// 2. CONFIGURATION REDIS
+// ==========================================
+const redisClient = createClient({
+  // L'URL est construite grâce aux variables du docker-compose
+  url: `redis://${process.env.REDIS_HOST || "redis"}:${
+    process.env.REDIS_PORT || 6379
+  }`,
+})
 
+redisClient.on("error", (err) => console.error("❌ Redis Client Error", err))
+
+const connectRedis = async () => {
+  console.log("⚡️ Tentative connexion Redis...")
+  try {
+    await redisClient.connect()
+    console.log("✅ Connecté à Redis !")
+  } catch (e) {
+    console.error("❌ Echec Redis", e)
+  }
+}
+connectRedis()
+
+// ==========================================
+// 3. LE SERVEUR HTTP
+// ==========================================
 const server = http.createServer(async (req, res) => {
   res.statusCode = 200
-  res.setHeader("Content-Type", "text/plain")
+  res.setHeader("Content-Type", "text/plain; charset=utf-8")
 
   try {
-    // Si le client n'est pas connecté, ça va planter ici, et c'est géré par le catch
-    const result = await client.query("SELECT NOW() as now")
-    const dbTime = result.rows[0].now
+    // --- Test Postgres ---
+    let dbTime = "Non connecté"
+    if (pgClient) {
+      const result = await pgClient.query("SELECT NOW() as now")
+      dbTime = result.rows[0].now
+    }
 
-    res.end(
-      `Hello from the VPS! \nEnvironment: ${process.env.NODE_ENV} \nDB Time: ${dbTime}`
-    )
+    // --- Test Redis (Compteur de visites) ---
+    // On incrémente le compteur 'visits'
+    let visits = "Non connecté"
+    if (redisClient.isOpen) {
+      visits = await redisClient.incr("page_views")
+    }
+
+    // --- Réponse ---
+    const message = `
+🚀 Hello from the VPS!
+----------------------
+🌍 Environment: ${process.env.NODE_ENV}
+🐘 DB Time    : ${dbTime}
+⚡️ Redis Hits : ${visits}
+    `.trim()
+
+    res.end(message)
   } catch (e) {
-    res.end(
-      `L'API fonctionne, mais la DB n'est pas encore prête.\nErreur: ${e.message}`
-    )
+    res.end(`Erreur interne: ${e.message}`)
   }
 })
 

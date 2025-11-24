@@ -5,13 +5,11 @@ const { createClient } = require("redis")
 const { visitorLog } = require("./drizzle/schema")
 const { count } = require("drizzle-orm")
 
-// 1. DRIZZLE (DB) - Simple et direct, pas besoin d'adapter !
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 })
 const db = drizzle(pool)
 
-// 2. REDIS (Cache)
 const redisClient = createClient({
   url: `redis://${process.env.REDIS_HOST || "redis"}:${
     process.env.REDIS_PORT || 6379
@@ -20,23 +18,19 @@ const redisClient = createClient({
 redisClient.on("error", (err) => console.error("Redis Error", err))
 redisClient.connect().catch(console.error)
 
-// 3. SERVER
 const server = http.createServer(async (req, res) => {
   res.statusCode = 200
   res.setHeader("Content-Type", "text/plain; charset=utf-8")
 
   try {
-    // ÉCRIRE DANS LA DB (Via Drizzle) - Simple et direct !
     await db.insert(visitorLog).values({
       message: "Hello from Drizzle!",
       userAgent: req.headers["user-agent"] || "Unknown",
     })
 
-    // LIRE LA DB (Compter le total)
     const result = await db.select({ value: count() }).from(visitorLog)
     const countDB = result[0].value
 
-    // REDIS
     let countRedis = "N/A"
     if (redisClient.isOpen) {
       countRedis = await redisClient.incr("page_views")

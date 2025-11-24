@@ -1,17 +1,15 @@
 services:
-  # --- TON API ---
   app:
     image: ${IMAGE_NAME}
     restart: always
-    # L'API a besoin de deux pieds : un vers le web, un vers la DB
     networks:
-      - web_network # Pour Traefik
-      - default # Pour parler à la DB (interne)
+      - web_network
+      - default
     environment:
       - NODE_ENV=${ENV_TYPE}
       - POSTGRES_HOST=db
       - POSTGRES_USER=app_user
-      - POSTGRES_PASSWORD=${DB_PASSWORD} # Secret injecté
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=mydb
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -23,11 +21,9 @@ services:
       - "traefik.http.routers.${SERVICE_NAME}.tls.certresolver=myresolver"
       - "traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=3000"
 
-  # --- TA BASE DE DONNÉES ---
   db:
     image: postgres:15-alpine
     restart: always
-    # La DB ne touche QUE le réseau interne. Traefik ne peut pas la voir.
     networks:
       - default
     environment:
@@ -35,48 +31,34 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=mydb
     volumes:
-      # C'est ici que se joue la persistance !
-      # On crée un volume nommé. Docker le gère pour nous.
       - db_data:/var/lib/postgresql/data
 
-  # --- LE CACHE ---
   redis:
     image: redis:7-alpine
     restart: always
     networks:
       - default
-    # Pas de volume nécessaire si c'est juste du cache temporaire
-    # Pas de labels Traefik (personne ne doit y accéder de l'extérieur)
 
   db-backup:
     image: prodrigestivill/postgres-backup-local
     restart: always
-    # Il doit être sur le même réseau que la DB pour lui parler
     networks:
       - default
     environment:
-      # Connexion
       - POSTGRES_HOST=db
       - POSTGRES_DB=mydb
       - POSTGRES_USER=app_user
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-
-      # Planification (Cron)
-      - SCHEDULE=@daily # Tous les jours à 00:00
-
-      # Rétention (Combien de temps on garde ?)
-      - BACKUP_KEEP_DAYS=7 # Garde les 7 derniers jours
-      - BACKUP_KEEP_WEEKS=4 # Garde les 4 derniers dimanches
-      - BACKUP_KEEP_MONTHS=6 # Garde les 6 derniers mois
-
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
     volumes:
       - ./backups:/backups
 
-# On déclare le volume
 volumes:
   db_data:
 
 networks:
   web_network:
     external: true
-  # Le réseau 'default' est créé automatiquement par Docker, pas besoin de le déclarer

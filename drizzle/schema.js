@@ -8,4 +8,3 @@ const visitorLog = pgTable("VisitorLog", {
 })
 
 module.exports = { visitorLog }
-

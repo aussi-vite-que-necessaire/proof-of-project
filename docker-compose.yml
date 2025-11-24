@@ -13,6 +13,8 @@ services:
       - POSTGRES_USER=myuser
       - POSTGRES_PASSWORD=${DB_PASSWORD} # Secret injecté
       - POSTGRES_DB=mydb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN_NAME}`)"
@@ -35,6 +37,15 @@ services:
       # C'est ici que se joue la persistance !
       # On crée un volume nommé. Docker le gère pour nous.
       - db_data:/var/lib/postgresql/data
+
+  # --- LE CACHE ---
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - default
+    # Pas de volume nécessaire si c'est juste du cache temporaire
+    # Pas de labels Traefik (personne ne doit y accéder de l'extérieur)
 
 # On déclare le volume
 volumes:

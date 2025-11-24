@@ -69,6 +69,9 @@ services:
       - BACKUP_KEEP_WEEKS=4 # Garde les 4 derniers dimanches
       - BACKUP_KEEP_MONTHS=6 # Garde les 6 derniers mois
 
+    volumes:
+      - ./backups:/backups
+
 # On déclare le volume
 volumes:
   db_data:

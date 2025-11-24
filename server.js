@@ -1,35 +1,56 @@
 const http = require("http")
 const { Client } = require("pg")
 
-// Configuration de la DB via les variables d'environnement (Injectées par Docker)
-const client = new Client({
+// Configuration
+const dbConfig = {
   user: process.env.POSTGRES_USER || "postgres",
   password: process.env.POSTGRES_PASSWORD || "example",
   database: process.env.POSTGRES_DB || "myapp",
-  host: "db", // <--- C'est le nom du service dans docker-compose !
+  host: "db",
   port: 5432,
-})
+}
 
-// Connexion à la DB
-client
-  .connect()
-  .then(() => console.log("✅ Connecté à PostgreSQL"))
-  .catch((err) => console.error("❌ Erreur connexion DB", err))
+let client
+
+// Fonction de connexion résiliente (Retry Pattern)
+const connectWithRetry = () => {
+  console.log("⏳ Tentative de connexion à PostgreSQL...")
+
+  // On crée une nouvelle instance à chaque tentative
+  client = new Client(dbConfig)
+
+  client
+    .connect()
+    .then(() => console.log("✅ Connecté à PostgreSQL avec succès !"))
+    .catch((err) => {
+      console.error(
+        "❌ Échec connexion DB. Nouvelle tentative dans 5 secondes..."
+      )
+      console.error("Erreur:", err.message)
+      // On attend 5 secondes avant de réessayer
+      setTimeout(connectWithRetry, 5000)
+    })
+}
+
+// Lancer la connexion
+connectWithRetry()
 
 const server = http.createServer(async (req, res) => {
   res.statusCode = 200
   res.setHeader("Content-Type", "text/plain")
 
   try {
-    // Petit test : Demander l'heure à la DB
+    // Si le client n'est pas connecté, ça va planter ici, et c'est géré par le catch
     const result = await client.query("SELECT NOW() as now")
     const dbTime = result.rows[0].now
 
     res.end(
-      `Hello from VPS! \nEnvironment: ${process.env.NODE_ENV} \nDB Time: ${dbTime}`
+      `Hello from the VPS! \nEnvironment: ${process.env.NODE_ENV} \nDB Time: ${dbTime}`
     )
   } catch (e) {
-    res.end(`Erreur DB: ${e.message}`)
+    res.end(
+      `L'API fonctionne, mais la DB n'est pas encore prête.\nErreur: ${e.message}`
+    )
   }
 })
 

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
+    "drizzle-orm": "^0.44.7",
     "pg": "^8.11.0",
     "redis": "^4.6.0",
     "drizzle-kit": "^0.31.7"
@@ -14,9 +15,6 @@
     "dev:db:logs": "docker compose -f docker-compose.dev.yml logs -f db",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
-  },
-  "devDependencies": {
-    "drizzle-kit": "^0.31.7"
   },
   "overrides": {
     "esbuild": "^0.27.0"

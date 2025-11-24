@@ -3,9 +3,8 @@ const { PrismaClient } = require("@prisma/client")
 const { createClient } = require("redis")
 
 // 1. PRISMA (DB)
-const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-})
+// Prisma 7 lit automatiquement DATABASE_URL depuis prisma.config.ts
+const prisma = new PrismaClient()
 
 // 2. REDIS (Cache)
 const redisClient = createClient({

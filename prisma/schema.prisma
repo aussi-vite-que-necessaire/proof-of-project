@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // Important pour Docker (Linux)
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 

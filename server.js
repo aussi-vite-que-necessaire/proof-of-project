@@ -3,6 +3,7 @@ const { drizzle } = require("drizzle-orm/node-postgres")
 const { Pool } = require("pg")
 const { createClient } = require("redis")
 const { visitorLog } = require("./drizzle/schema")
+const { count } = require("drizzle-orm")
 
 // 1. DRIZZLE (DB) - Simple et direct, pas besoin d'adapter !
 const pool = new Pool({
@@ -32,8 +33,8 @@ const server = http.createServer(async (req, res) => {
     })
 
     // LIRE LA DB (Compter le total)
-    const result = await db.select().from(visitorLog)
-    const countDB = result.length
+    const result = await db.select({ value: count() }).from(visitorLog)
+    const countDB = result[0].value
 
     // REDIS
     let countRedis = "N/A"

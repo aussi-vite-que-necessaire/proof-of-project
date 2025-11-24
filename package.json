@@ -5,7 +5,8 @@
   "dependencies": {
     "drizzle-orm": "^0.36.0",
     "pg": "^8.11.0",
-    "redis": "^4.6.0"
+    "redis": "^4.6.0",
+    "drizzle-kit": "^0.31.7"
   },
   "scripts": {
     "start": "node server.js",
@@ -13,8 +14,7 @@
     "dev:db:down": "docker compose -f docker-compose.dev.yml down",
     "dev:db:logs": "docker compose -f docker-compose.dev.yml logs -f db",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "drizzle-kit": "^0.31.7"
+    "db:migrate": "drizzle-kit migrate"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.7"

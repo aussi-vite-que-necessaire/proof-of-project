@@ -104,7 +104,7 @@ services:
     restart: always
     # On écrase la commande de démarrage par défaut pour lancer le Studio
     # Le "-y" permet de l'installer si jamais il manque dans l'image de prod
-    command: npx -y drizzle-kit studio --port 4983 --host 0.0.0.0
+    command: npx drizzle-kit studio --port 4983 --host 0.0.0.0
     networks:
       - web_network # Pour Traefik
       - default # Pour parler à la DB

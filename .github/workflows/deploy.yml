@@ -72,13 +72,16 @@ jobs:
             # 5. Sécurité : On verrouille le fichier (seul ton user peut le lire)
             chmod 600 .env
 
-            # 6. Télécharger les images
+            # 6. Arrêter l'app si elle tourne (pour éviter les erreurs pendant les migrations)
+            docker compose stop app || true
+
+            # 7. Télécharger les images
             docker compose pull
 
-            # 7. Démarrer UNIQUEMENT la DB et les services de support (pas l'app)
+            # 8. Démarrer UNIQUEMENT la DB et les services de support (pas l'app)
             docker compose up -d db redis mailpit db-backup
 
-            # 8. Attendre que la DB soit prête
+            # 9. Attendre que la DB soit prête
             echo "Attente de la base de données..."
             for i in {1..30}; do
               docker compose exec -T db pg_isready -U app_user -d mydb && break
@@ -86,15 +89,15 @@ jobs:
               sleep 1
             done
 
-            # 9. Appliquer les migrations AVANT de démarrer l'app
+            # 10. Appliquer les migrations AVANT de démarrer l'app
             echo "Application des migrations..."
-            docker compose run --rm -e DATABASE_URL="postgresql://app_user:${DB_PASSWORD}@db:5432/mydb" app npm run db:migrate || {
+            docker compose run --rm -e DATABASE_URL="postgresql://app_user:${{ secrets.DB_PASSWORD }}@db:5432/mydb" app npm run db:migrate || {
               echo "❌ ERREUR: Les migrations ont échoué!"
               docker compose logs db | tail -20
               exit 1
             }
             echo "✅ Migrations appliquées avec succès"
 
-            # 10. Maintenant démarrer l'app
+            # 11. Maintenant démarrer l'app
             echo "Démarrage de l'application..."
             docker compose up -d app

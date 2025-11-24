@@ -1,0 +1,37 @@
+name: Cleanup PR Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  PROJECT_NAME: "proof-of-project"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            PR_ID="pr-${{ github.event.number }}"
+            FOLDER_NAME="${{ env.PROJECT_NAME }}-$PR_ID"
+
+            # Aller dans le dossier
+            if [ -d "~/apps/$FOLDER_NAME" ]; then
+              cd ~/apps/$FOLDER_NAME
+              
+              # Éteindre les conteneurs de cette PR
+              docker compose -p $FOLDER_NAME down --volumes
+              
+              # Supprimer le dossier
+              cd ..
+              rm -rf $FOLDER_NAME
+              echo "Environnement $FOLDER_NAME supprimé avec succès."
+            else
+              echo "Le dossier $FOLDER_NAME n'existe pas, rien à nettoyer."
+            fi

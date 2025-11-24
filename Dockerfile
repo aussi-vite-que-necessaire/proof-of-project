@@ -16,7 +16,7 @@ COPY . .
 # 4. La solution ultime pour le build
 # On définit une variable de construction (ARG)
 # Prisma va la lire automatiquement sans qu'on ait besoin de la mettre dans la commande
-ARG DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+RUN echo "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/mydb" > .env
 
 # 5. Générer le client
 RUN npx prisma generate

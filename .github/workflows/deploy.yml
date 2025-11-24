@@ -64,7 +64,7 @@ jobs:
             DOMAIN_NAME=${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
             ENV_TYPE=production
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            POSTGRES_USER=myuser
+            POSTGRES_USER=app_user
             POSTGRES_DB=mydb
             # Ajoute ici tes autres variables si besoin (Redis, etc)
             EOF

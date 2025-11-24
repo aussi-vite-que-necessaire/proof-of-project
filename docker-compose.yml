@@ -10,11 +10,12 @@ services:
     environment:
       - NODE_ENV=${ENV_TYPE}
       - POSTGRES_HOST=db
-      - POSTGRES_USER=myuser
+      - POSTGRES_USER=app_user
       - POSTGRES_PASSWORD=${DB_PASSWORD} # Secret injecté
       - POSTGRES_DB=mydb
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DATABASE_URL=postgresql://app_user:${DB_PASSWORD}@db:5432/mydb
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN_NAME}`)"
@@ -30,7 +31,7 @@ services:
     networks:
       - default
     environment:
-      - POSTGRES_USER=myuser
+      - POSTGRES_USER=app_user
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=mydb
     volumes:
@@ -57,7 +58,7 @@ services:
       # Connexion
       - POSTGRES_HOST=db
       - POSTGRES_DB=mydb
-      - POSTGRES_USER=myuser
+      - POSTGRES_USER=app_user
       - POSTGRES_PASSWORD=${DB_PASSWORD}
 
       # Planification (Cron)

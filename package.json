@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
+    "@prisma/client": "^7.0.0",
     "pg": "^8.11.0",
     "redis": "^4.6.0"
   },
   "scripts": {
     "start": "node server.js"
+  },
+  "devDependencies": {
+    "prisma": "^7.0.0"
   }
 }

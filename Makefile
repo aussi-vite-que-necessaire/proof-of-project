@@ -25,3 +25,7 @@ reset-db:
 # 5. Ouvrir une console Rails/Node/DB (exemple)
 console:
 	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose exec app sh"
+
+# 6. Appliquer les migrations
+migrate:
+	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose exec app npm run db:migrate"

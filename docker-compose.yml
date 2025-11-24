@@ -47,6 +47,27 @@ services:
     # Pas de volume nécessaire si c'est juste du cache temporaire
     # Pas de labels Traefik (personne ne doit y accéder de l'extérieur)
 
+  db-backup:
+    image: prodrigestivill/postgres-backup-local
+    restart: always
+    # Il doit être sur le même réseau que la DB pour lui parler
+    networks:
+      - default
+    environment:
+      # Connexion
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=mydb
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+
+      # Planification (Cron)
+      - SCHEDULE=@daily # Tous les jours à 00:00
+
+      # Rétention (Combien de temps on garde ?)
+      - BACKUP_KEEP_DAYS=7 # Garde les 7 derniers jours
+      - BACKUP_KEEP_WEEKS=4 # Garde les 4 derniers dimanches
+      - BACKUP_KEEP_MONTHS=6 # Garde les 6 derniers mois
+
 # On déclare le volume
 volumes:
   db_data:

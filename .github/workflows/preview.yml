@@ -67,6 +67,14 @@ jobs:
             docker compose pull
             docker compose -p $FOLDER_NAME up -d --remove-orphans
 
+            # Attendre que la DB soit prête
+            echo "Attente de la base de données..."
+            sleep 5
+
+            # Appliquer les migrations
+            echo "Application des migrations..."
+            docker compose -p $FOLDER_NAME exec -T app npm run db:migrate || echo "Migrations déjà appliquées ou erreur (non bloquant)"
+
       # --- LE BOT QUI COMMENTE ---
       - name: Comment PR URL
         uses: thollander/actions-comment-pull-request@v2

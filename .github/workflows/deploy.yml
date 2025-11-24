@@ -72,7 +72,8 @@ jobs:
             # 5. Sécurité : On verrouille le fichier (seul ton user peut le lire)
             chmod 600 .env
 
-            # 6. Arrêter l'app si elle tourne (pour éviter les erreurs pendant les migrations)
+            # 6. Arrêter et SUPPRIMER l'app si elle tourne (pour éviter les erreurs pendant les migrations)
+            docker compose rm -f app || true
             docker compose stop app || true
 
             # 7. Télécharger les images

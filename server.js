@@ -3,7 +3,9 @@ const { PrismaClient } = require("@prisma/client")
 const { createClient } = require("redis")
 
 // 1. PRISMA (DB)
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DATABASE_URL,
+})
 
 // 2. REDIS (Cache)
 const redisClient = createClient({

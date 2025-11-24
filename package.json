@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
-    "@prisma/client": "^7.0.0",
+    "drizzle-orm": "^0.36.0",
+    "drizzle-kit": "^0.28.0",
     "pg": "^8.11.0",
     "redis": "^4.6.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
-  "devDependencies": {
-    "prisma": "^7.0.0"
-  }
+  "devDependencies": {}
 }

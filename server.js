@@ -1,10 +1,14 @@
 const http = require("http")
-const { PrismaClient } = require("@prisma/client")
+const { drizzle } = require("drizzle-orm/node-postgres")
+const { Pool } = require("pg")
 const { createClient } = require("redis")
+const { visitorLog } = require("./drizzle/schema")
 
-// 1. PRISMA (DB)
-// Prisma 7 lit automatiquement DATABASE_URL depuis prisma.config.ts
-const prisma = new PrismaClient()
+// 1. DRIZZLE (DB) - Simple et direct, pas besoin d'adapter !
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+})
+const db = drizzle(pool)
 
 // 2. REDIS (Cache)
 const redisClient = createClient({
@@ -21,17 +25,15 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Content-Type", "text/plain; charset=utf-8")
 
   try {
-    // ÉCRIRE DANS LA DB (Via Prisma)
-    // On crée une ligne dans la table VisitorLog à chaque visite
-    await prisma.visitorLog.create({
-      data: {
-        message: "Hello from Prisma!",
-        userAgent: req.headers["user-agent"] || "Unknown",
-      },
+    // ÉCRIRE DANS LA DB (Via Drizzle) - Simple et direct !
+    await db.insert(visitorLog).values({
+      message: "Hello from Drizzle!",
+      userAgent: req.headers["user-agent"] || "Unknown",
     })
 
     // LIRE LA DB (Compter le total)
-    const countDB = await prisma.visitorLog.count()
+    const result = await db.select().from(visitorLog)
+    const countDB = result.length
 
     // REDIS
     let countRedis = "N/A"
@@ -40,11 +42,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     const msg = `
-🚀 Stack Pro avec Migrations !
+🚀 Stack Pro avec Drizzle !
 ------------------------------
-🐘 Lignes en DB (Prisma) : ${countDB}
-⚡️ Compteur Redis       : ${countRedis}
-🌍 Env                  : ${process.env.NODE_ENV}
+🐘 Lignes en DB (Drizzle) : ${countDB}
+⚡️ Compteur Redis        : ${countRedis}
+🌍 Env                   : ${process.env.NODE_ENV}
     `
     res.end(msg)
   } catch (e) {

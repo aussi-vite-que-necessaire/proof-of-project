@@ -22,6 +22,7 @@ backup:
 reset-db:
 	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose down -v && docker compose up -d"
 
+
 # 5. Ouvrir une console Rails/Node/DB (exemple)
 console:
 	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose exec app sh"

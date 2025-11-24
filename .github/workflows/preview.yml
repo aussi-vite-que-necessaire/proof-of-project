@@ -1,0 +1,71 @@
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  BASE_DOMAIN: "avqn.ch"
+  # Attention : Mets bien le même nom que ton dossier principal pour que le path soit logique
+  PROJECT_NAME: "proof-of-project"
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          # On tag l'image avec le numéro de PR pour ne pas écraser la prod
+          tags: ghcr.io/${{ github.repository }}:pr-${{ github.event.number }}
+
+      - name: Deploy Preview to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # 1. Login Docker
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # 2. Définir des variables uniques pour cette PR
+            PR_ID="pr-${{ github.event.number }}"
+            FOLDER_NAME="${{ env.PROJECT_NAME }}-$PR_ID"
+
+            # 3. Créer un dossier dédié pour cette PR (Isolation)
+            mkdir -p ~/apps/$FOLDER_NAME
+            cd ~/apps/$FOLDER_NAME
+
+            # 4. Télécharger le docker-compose
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -o docker-compose.yml \
+                 -L https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.pull_request.head.ref }}/docker-compose.yml
+
+            # 5. Lancer avec les variables de PR
+            export IMAGE_NAME=ghcr.io/${{ github.repository }}:$PR_ID
+            export SERVICE_NAME=$FOLDER_NAME
+            # URL sera : pr-XX.proof-of-project.avqn.ch
+            export DOMAIN_NAME=$PR_ID.${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
+            export ENV_TYPE="preview-pr-${{ github.event.number }}"
+
+            # Pull et Up
+            docker compose pull
+            # -p (project name) est CRUCIAL : il permet d'avoir plusieurs fois la même app qui tourne en parallèle
+            docker compose -p $FOLDER_NAME up -d --remove-orphans

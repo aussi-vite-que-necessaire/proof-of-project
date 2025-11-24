@@ -21,17 +21,21 @@ jobs:
             PR_ID="pr-${{ github.event.number }}"
             FOLDER_NAME="${{ env.PROJECT_NAME }}-$PR_ID"
 
-            # Aller dans le dossier
-            if [ -d "~/apps/$FOLDER_NAME" ]; then
-              cd ~/apps/$FOLDER_NAME
+            # On utilise $HOME au lieu de ~ pour éviter les erreurs de guillemets
+            TARGET_DIR="$HOME/apps/$FOLDER_NAME"
+
+            # Vérifier si le dossier existe
+            if [ -d "$TARGET_DIR" ]; then
+              cd "$TARGET_DIR"
               
-              # Éteindre les conteneurs de cette PR
+              echo "🗑  Suppression du conteneur et des volumes..."
               docker compose -p $FOLDER_NAME down --volumes
               
-              # Supprimer le dossier
+              echo "🗑  Suppression du dossier..."
               cd ..
-              rm -rf $FOLDER_NAME
-              echo "Environnement $FOLDER_NAME supprimé avec succès."
+              rm -rf "$TARGET_DIR"
+              
+              echo "✅ Environnement $FOLDER_NAME supprimé avec succès."
             else
-              echo "Le dossier $FOLDER_NAME n'existe pas, rien à nettoyer."
+              echo "⚠️ Le dossier $TARGET_DIR n'existe pas (ou a déjà été supprimé)."
             fi

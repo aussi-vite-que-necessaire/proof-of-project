@@ -10,13 +10,10 @@ RUN npm install
 # Copie tout le reste
 COPY . .
 
-# --- LE FIX EST ICI ---
-# On définit une URL bidon juste pour que Prisma accepte de générer le client.
-# Cette valeur sera écrasée par la vraie URL au démarrage du conteneur.
-ENV DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb"
 
 # Génère le client Prisma
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/mydb" npx prisma generate
+
 
 EXPOSE 3000
 

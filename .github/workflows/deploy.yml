@@ -91,8 +91,12 @@ jobs:
 
             # 9. Appliquer les migrations
             echo "Application des migrations..."
-            docker compose exec -T app npm run db:migrate || {
-              echo "⚠️ Erreur lors de l'application des migrations, voir les logs ci-dessous:"
-              docker compose logs app | tail -20
-              echo "⚠️ Les migrations peuvent être appliquées manuellement avec: make migrate"
-            }
+            if ! docker compose exec -T app npm run db:migrate; then
+              echo "❌ ERREUR: Les migrations ont échoué!"
+              echo "Logs de l'app:"
+              docker compose logs app | tail -30
+              echo "État des conteneurs:"
+              docker compose ps
+              exit 1
+            fi
+            echo "✅ Migrations appliquées avec succès"

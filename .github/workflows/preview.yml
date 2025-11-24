@@ -61,6 +61,7 @@ jobs:
             export IMAGE_NAME=ghcr.io/${{ github.repository }}:$PR_ID
             export SERVICE_NAME=$FOLDER_NAME
             export DOMAIN_NAME=$PR_ID.${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export ENV_TYPE="preview-pr-${{ github.event.number }}"
 
             docker compose pull
@@ -74,6 +75,4 @@ jobs:
             🚀 **Preview Environment is ready!**
 
             ✅ **URL:** https://pr-${{ github.event.number }}.${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
-
-            _Ce lien est isolé. La prod n'a pas bougé._
           comment_tag: execution

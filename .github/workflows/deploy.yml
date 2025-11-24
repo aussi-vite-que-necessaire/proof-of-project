@@ -63,6 +63,7 @@ jobs:
             # On injecte les variables pour Traefik
             export SERVICE_NAME=${{ env.PROJECT_NAME }}
             export DOMAIN_NAME=${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export ENV_TYPE=production
 
             docker compose up -d --remove-orphans

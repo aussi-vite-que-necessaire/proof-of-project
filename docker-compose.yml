@@ -1,21 +1,46 @@
 services:
+  # --- TON API ---
   app:
-    # L'image sera construite par GitHub Actions
     image: ${IMAGE_NAME}
     restart: always
+    # L'API a besoin de deux pieds : un vers le web, un vers la DB
     networks:
-      - web_network
+      - web_network # Pour Traefik
+      - default # Pour parler à la DB (interne)
     environment:
-      - NODE_ENV=${ENV_TYPE} # "production" ou "preview"
+      - NODE_ENV=${ENV_TYPE}
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD} # Secret injecté
+      - POSTGRES_DB=mydb
     labels:
       - "traefik.enable=true"
-      # ROUTER : On utilise le nom de domaine injecté dynamiquement
       - "traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN_NAME}`)"
       - "traefik.http.routers.${SERVICE_NAME}.entrypoints=websecure"
       - "traefik.http.routers.${SERVICE_NAME}.tls.certresolver=myresolver"
-      # SERVICE : On pointe sur le port interne du container
       - "traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=3000"
+
+  # --- TA BASE DE DONNÉES ---
+  db:
+    image: postgres:15-alpine
+    restart: always
+    # La DB ne touche QUE le réseau interne. Traefik ne peut pas la voir.
+    networks:
+      - default
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=mydb
+    volumes:
+      # C'est ici que se joue la persistance !
+      # On crée un volume nommé. Docker le gère pour nous.
+      - db_data:/var/lib/postgresql/data
+
+# On déclare le volume
+volumes:
+  db_data:
 
 networks:
   web_network:
     external: true
+  # Le réseau 'default' est créé automatiquement par Docker, pas besoin de le déclarer

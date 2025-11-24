@@ -42,28 +42,37 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # 1. Login au registre sur le VPS pour pouvoir télécharger l'image privée
+            # 1. Login Docker
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 2. Créer le dossier du projet
+            # 2. Préparation dossier
             mkdir -p ~/apps/${{ env.PROJECT_NAME }}
             cd ~/apps/${{ env.PROJECT_NAME }}
 
-            # 3. Récupérer le docker-compose frais (on l'écrit dynamiquement)
-            # On utilise 'curl' pour télécharger le fichier depuis le repo brut
+            # 3. Téléchargement du docker-compose
             curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                  -o docker-compose.yml \
                  -L https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
 
-            # 4. Pull la dernière image
-            export IMAGE_NAME=ghcr.io/${{ github.repository }}:latest
+            # 4. CRÉATION AUTOMATIQUE DU .ENV 🪄
+            # On écrit toutes les variables dans le fichier .env
+            echo "Génération du fichier .env..."
+
+            cat <<EOF > .env
+            IMAGE_NAME=ghcr.io/${{ github.repository }}:latest
+            SERVICE_NAME=${{ env.PROJECT_NAME }}
+            DOMAIN_NAME=${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
+            ENV_TYPE=production
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            POSTGRES_USER=myuser
+            POSTGRES_DB=mydb
+            # Ajoute ici tes autres variables si besoin (Redis, etc)
+            EOF
+
+            # 5. Sécurité : On verrouille le fichier (seul ton user peut le lire)
+            chmod 600 .env
+
+            # 6. Lancement
+            # Plus besoin de 'export' car Docker lit le .env tout seul !
             docker compose pull
-
-            # 5. Lancer ! 
-            # On injecte les variables pour Traefik
-            export SERVICE_NAME=${{ env.PROJECT_NAME }}
-            export DOMAIN_NAME=${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export ENV_TYPE=production
-
             docker compose up -d --remove-orphans

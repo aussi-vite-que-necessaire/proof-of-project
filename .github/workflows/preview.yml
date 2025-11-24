@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-      pull-requests: write # <--- IMPORTANT pour que le bot puisse commenter
+      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -41,23 +41,18 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Login
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Setup Vars
             PR_ID="pr-${{ github.event.number }}"
             FOLDER_NAME="${{ env.PROJECT_NAME }}-$PR_ID"
 
-            # Create Folder
             mkdir -p ~/apps/$FOLDER_NAME
             cd ~/apps/$FOLDER_NAME
 
-            # Get Compose
             curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                  -o docker-compose.yml \
                  -L https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.pull_request.head.ref }}/docker-compose.yml
 
-            # Deploy
             export IMAGE_NAME=ghcr.io/${{ github.repository }}:$PR_ID
             export SERVICE_NAME=$FOLDER_NAME
             export DOMAIN_NAME=$PR_ID.${{ env.PROJECT_NAME }}.${{ env.BASE_DOMAIN }}
@@ -67,15 +62,12 @@ jobs:
             docker compose pull
             docker compose -p $FOLDER_NAME up -d --remove-orphans
 
-            # Attendre que la DB soit prête
             echo "Attente de la base de données..."
             sleep 5
 
-            # Appliquer les migrations
             echo "Application des migrations..."
             docker compose -p $FOLDER_NAME exec -T app npm run db:migrate || echo "Migrations déjà appliquées ou erreur (non bloquant)"
 
-      # --- LE BOT QUI COMMENTE ---
       - name: Comment PR URL
         uses: thollander/actions-comment-pull-request@v2
         with:

@@ -21,10 +21,8 @@ jobs:
             PR_ID="pr-${{ github.event.number }}"
             FOLDER_NAME="${{ env.PROJECT_NAME }}-$PR_ID"
 
-            # On utilise $HOME au lieu de ~ pour éviter les erreurs de guillemets
             TARGET_DIR="$HOME/apps/$FOLDER_NAME"
 
-            # Vérifier si le dossier existe
             if [ -d "$TARGET_DIR" ]; then
               cd "$TARGET_DIR"
               

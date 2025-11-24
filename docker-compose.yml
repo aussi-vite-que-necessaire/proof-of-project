@@ -1,5 +1,4 @@
 services:
-  # --- TON API NODE.JS ---
   app:
     image: ${IMAGE_NAME}
     restart: always
@@ -15,28 +14,24 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - DATABASE_URL=postgresql://app_user:${DB_PASSWORD}@db:5432/mydb
-      - SMTP_HOST=mailpit # L'API parle au service ci-dessous
+      - SMTP_HOST=mailpit
       - SMTP_PORT=1025
     labels:
       - "traefik.enable=true"
-      # Routage de l'API
       - "traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN_NAME}`)"
       - "traefik.http.routers.${SERVICE_NAME}.entrypoints=websecure"
       - "traefik.http.routers.${SERVICE_NAME}.tls.certresolver=myresolver"
       - "traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=3000"
-
-      # Sécurité API (Rate Limit)
       - "traefik.http.middlewares.limit-api.ratelimit.average=100"
       - "traefik.http.middlewares.limit-api.ratelimit.burst=50"
       - "traefik.http.routers.${SERVICE_NAME}.middlewares=limit-api"
 
-  # --- LA BOITE MAIL (MAILPIT) ---
   mailpit:
     image: axllent/mailpit
     restart: always
     networks:
-      - web_network # Pour l'interface Web (Traefik)
-      - default # Pour recevoir les mails de l'App (Interne)
+      - web_network
+      - default
     environment:
       - MP_MAX_MESSAGES=5000
       - MP_DATABASE=/data/mailpit.db
@@ -46,20 +41,14 @@ services:
       - mailpit_data:/data
     labels:
       - "traefik.enable=true"
-      # On force l'usage du réseau web pour l'interface
       - "traefik.docker.network=web_network"
-
-      # Routage de l'interface Web (emails.domaine.com)
       - "traefik.http.routers.${SERVICE_NAME}-mail.rule=Host(`emails.${DOMAIN_NAME}`)"
       - "traefik.http.routers.${SERVICE_NAME}-mail.entrypoints=websecure"
       - "traefik.http.routers.${SERVICE_NAME}-mail.tls.certresolver=myresolver"
       - "traefik.http.services.${SERVICE_NAME}-mail.loadbalancer.server.port=8025"
-
-      # Protection par Mot de Passe
       - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$mTp02pz/$$JgD44iCfTvV5g6ORuzrJJ."
       - "traefik.http.routers.${SERVICE_NAME}-mail.middlewares=auth"
 
-  # --- BASE DE DONNEES ---
   db:
     image: postgres:15-alpine
     restart: always
@@ -72,14 +61,12 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
-  # --- CACHE ---
   redis:
     image: redis:7-alpine
     restart: always
     networks:
       - default
 
-  # --- BACKUP ---
   db-backup:
     image: prodrigestivill/postgres-backup-local
     restart: always
@@ -97,7 +84,6 @@ services:
     volumes:
       - ./backups:/backups
 
-  # --- DB EXPLORER (ADMINER) ---
   adminer:
     image: adminer
     restart: always
@@ -109,18 +95,16 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web_network"
-      # On garde la même URL
       - "traefik.http.routers.${SERVICE_NAME}-studio.rule=Host(`studio.${DOMAIN_NAME}`)"
       - "traefik.http.routers.${SERVICE_NAME}-studio.entrypoints=websecure"
       - "traefik.http.routers.${SERVICE_NAME}-studio.tls.certresolver=myresolver"
       - "traefik.http.services.${SERVICE_NAME}-studio.loadbalancer.server.port=8080"
-      # AUTHENTIFICATION OBLIGATOIRE
       - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$mTp02pz/$$JgD44iCfTvV5g6ORuzrJJ."
       - "traefik.http.routers.${SERVICE_NAME}-studio.middlewares=auth"
 
 volumes:
   db_data:
-  mailpit_data: # <--- Ne l'oublie pas celui-là !
+  mailpit_data:
 
 networks:
   web_network:

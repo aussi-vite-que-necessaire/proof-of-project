@@ -5,8 +5,6 @@ on:
     branches: ["main"]
 
 env:
-  # NOM DE DOMAINE A CONFIGURER ICI
-  # Si ton domaine est "monagence.com", mets-le ici.
   BASE_DOMAIN: "avqn.ch"
   PROJECT_NAME: "proof-of-project"
 
@@ -42,20 +40,15 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # 1. Login Docker
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 2. Préparation dossier
             mkdir -p ~/apps/${{ env.PROJECT_NAME }}
             cd ~/apps/${{ env.PROJECT_NAME }}
 
-            # 3. Téléchargement du docker-compose
             curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                  -o docker-compose.yml \
                  -L https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
 
-            # 4. CRÉATION AUTOMATIQUE DU .ENV 🪄
-            # On écrit toutes les variables dans le fichier .env
             echo "Génération du fichier .env..."
 
             cat <<EOF > .env
@@ -66,23 +59,17 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             POSTGRES_USER=app_user
             POSTGRES_DB=mydb
-            # Ajoute ici tes autres variables si besoin (Redis, etc)
             EOF
 
-            # 5. Sécurité : On verrouille le fichier (seul ton user peut le lire)
             chmod 600 .env
 
-            # 6. Arrêter et SUPPRIMER l'app si elle tourne (pour éviter les erreurs pendant les migrations)
             docker compose rm -f app || true
             docker compose stop app || true
 
-            # 7. Télécharger les images
             docker compose pull
 
-            # 8. Démarrer UNIQUEMENT la DB et les services de support (pas l'app)
             docker compose up -d db redis mailpit db-backup
 
-            # 9. Attendre que la DB soit prête
             echo "Attente de la base de données..."
             for i in {1..30}; do
               docker compose exec -T db pg_isready -U app_user -d mydb && break
@@ -90,7 +77,6 @@ jobs:
               sleep 1
             done
 
-            # 10. Appliquer les migrations AVANT de démarrer l'app
             echo "Application des migrations..."
             docker compose run --rm -e DATABASE_URL="postgresql://app_user:${{ secrets.DB_PASSWORD }}@db:5432/mydb" app npm run db:migrate || {
               echo "❌ ERREUR: Les migrations ont échoué!"
@@ -99,6 +85,5 @@ jobs:
             }
             echo "✅ Migrations appliquées avec succès"
 
-            # 11. Maintenant démarrer l'app
             echo "Démarrage de l'application..."
             docker compose up -d

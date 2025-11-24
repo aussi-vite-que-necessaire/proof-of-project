@@ -101,4 +101,4 @@ jobs:
 
             # 11. Maintenant démarrer l'app
             echo "Démarrage de l'application..."
-            docker compose up -d app
+            docker compose up -d

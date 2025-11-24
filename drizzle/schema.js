@@ -4,6 +4,7 @@ const visitorLog = pgTable("VisitorLog", {
   id: serial("id").primaryKey(),
   message: text("message").notNull(),
   name: text("name").notNull(),
+  email: text("email").notNull(),
   userAgent: text("userAgent"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 })

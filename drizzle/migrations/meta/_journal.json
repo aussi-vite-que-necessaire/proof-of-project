@@ -15,6 +15,13 @@
       "when": 1764013889938,
       "tag": "0002_volatile_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764015287027,
+      "tag": "0002_mature_mimic",
+      "breakpoints": true
     }
   ]
 }

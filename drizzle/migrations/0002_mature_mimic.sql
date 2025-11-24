@@ -1,0 +1,1 @@
+ALTER TABLE "VisitorLog" ADD COLUMN "email" text NOT NULL;

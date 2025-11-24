@@ -55,8 +55,8 @@ services:
       - "traefik.http.routers.${SERVICE_NAME}-mail.tls.certresolver=myresolver"
       - "traefik.http.services.${SERVICE_NAME}-mail.loadbalancer.server.port=8025"
 
-      # Protection par Mot de Passe (admin / admin)
-      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$vH5Y4A.M$$fU/Q133.L6yLbd5x8G5J.1"
+      # Protection par Mot de Passe
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$mTp02pz/$$JgD44iCfTvV5g6ORuzrJJ."
       - "traefik.http.routers.${SERVICE_NAME}-mail.middlewares=auth"
 
   # --- BASE DE DONNEES ---

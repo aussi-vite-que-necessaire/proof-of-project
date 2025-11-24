@@ -1,21 +1,27 @@
-# Makefile
+# --- VARIABLES ---
+# L'alias SSH défini dans ton ~/.ssh/config
+SSH_HOST = avqn-prod
+# Le dossier du projet sur le serveur
+REMOTE_DIR = ~/apps/proof-of-project
 
-# Déploie les migrations et lance en local (si tu avais un docker-compose local)
-dev:
-	docker compose up
+# --- COMMANDES ---
 
-# Connexion SSH rapide au serveur
+# 1. Connexion SSH directe (en tant que deployer)
 ssh:
-	ssh deployer@95.217.181.5
+	ssh $(SSH_HOST)
 
-# Voir les logs de prod
+# 2. Voir les logs en direct
 logs:
-	ssh deployer@95.217.181.5 "cd ~/apps/proof-of-project && docker compose logs -f"
+	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose logs -f"
 
-# Faire un backup manuel
+# 3. Faire un backup manuel immédiat
 backup:
-	ssh deployer@95.217.181.5 "cd ~/apps/proof-of-project && docker compose exec db-backup /backup.sh"
+	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose exec db-backup /backup.sh"
 
-# Reset la DB de prod (DANGER)
+# 4. Reset la DB (Attention danger)
 reset-db:
-	ssh deployer@95.217.181.5 "cd ~/apps/proof-of-project && docker compose down -v && docker compose up -d"
+	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose down -v && docker compose up -d"
+
+# 5. Ouvrir une console Rails/Node/DB (exemple)
+console:
+	ssh $(SSH_HOST) "cd $(REMOTE_DIR) && docker compose exec app sh"
